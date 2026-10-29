@@ -48,13 +48,36 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 details summary { cursor: pointer; color: var(--muted); }
 details dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0 0; }
 details dd { margin: 0; overflow-wrap: anywhere; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.advice { margin-top: 8px; padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-size: 13px; }
+.advice summary { font-weight: 600; color: var(--fg); cursor: pointer; }
+.advice p { margin: 6px 0; }
+.advice pre { margin: 6px 0; padding: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
 `;
+
+export interface HtmlDiagnosticItem {
+  readonly rootCause: string;
+  readonly fix: string;
+  readonly snippet?: string;
+}
+
+export interface HtmlReportOptions {
+  /** Optional diagnostic advice keyed by finding ID or finding type. */
+  readonly diagnostics?: Readonly<Record<string, HtmlDiagnosticItem>>;
+  /** Optional eco/carbon waste calculation summary. */
+  readonly carbonSummary?: {
+    readonly totalBytes: number;
+    readonly carbonGrams: number;
+  };
+}
 
 function measurementText(value: MeasurementValue): string {
   return value === null ? 'n/a' : String(value);
 }
 
-function findingRow(finding: ReportedFinding): string {
+function findingRow(
+  finding: ReportedFinding,
+  diagnostics?: Readonly<Record<string, HtmlDiagnosticItem>>,
+): string {
   const measurements = Object.entries(finding.evidence.measurements)
     .map(
       ([name, value]) =>
@@ -62,23 +85,32 @@ function findingRow(finding: ReportedFinding): string {
     )
     .join('');
   const ids = finding.evidence.requestIds.map(escapeHtml).join(', ');
+  const advice = diagnostics?.[finding.id] ?? diagnostics?.[finding.type];
+  const adviceHtml =
+    advice === undefined
+      ? ''
+      : `<details class="advice"><summary>Root cause &amp; fix recommendation</summary><p><strong>Root cause:</strong> ${escapeHtml(advice.rootCause)}</p><p><strong>Fix:</strong> ${escapeHtml(advice.fix)}</p>${advice.snippet ? `<pre><code>${escapeHtml(advice.snippet)}</code></pre>` : ''}</details>`;
+
   return `<tr>
 <td><span class="sev sev-${finding.severity}">${finding.severity}</span></td>
 <td>${escapeHtml(finding.type)}</td>
 <td><strong>${escapeHtml(finding.title)}</strong><div class="muted">confidence ${finding.confidence} · triage ${finding.triage}</div></td>
 <td class="endpoint">${escapeHtml(finding.endpoint ?? '—')}</td>
 <td class="num">${String(finding.evidence.requestCount)}</td>
-<td class="reasoning">${escapeHtml(finding.reasoning)}<details><summary>Evidence</summary><dl>${measurements}<dt>requests</dt><dd>${ids || 'n/a'}</dd></dl></details></td>
+<td class="reasoning">${escapeHtml(finding.reasoning)}<details><summary>Evidence</summary><dl>${measurements}<dt>requests</dt><dd>${ids || 'n/a'}</dd></dl></details>${adviceHtml}</td>
 </tr>`;
 }
 
-function findingsTable(findings: readonly ReportedFinding[]): string {
+function findingsTable(
+  findings: readonly ReportedFinding[],
+  diagnostics?: Readonly<Record<string, HtmlDiagnosticItem>>,
+): string {
   if (findings.length === 0) {
     return '<p class="muted">No findings.</p>';
   }
   return `<div class="table-wrap"><table>
 <thead><tr><th>Severity</th><th>Type</th><th>Finding</th><th>Endpoint</th><th>Requests</th><th>Reasoning</th></tr></thead>
-<tbody>${findings.map(findingRow).join('')}</tbody></table></div>`;
+<tbody>${findings.map((f) => findingRow(f, diagnostics)).join('')}</tbody></table></div>`;
 }
 
 function optionalMs(value: number | null): string {
@@ -89,7 +121,7 @@ function optionalMs(value: number | null): string {
  * A self-contained HTML report. Every value is escaped, and the embedded
  * Content-Security-Policy forbids scripts, so captured content can never run.
  */
-export function reportToHtml(report: SanitizedReport): string {
+export function reportToHtml(report: SanitizedReport, options?: HtmlReportOptions): string {
   const { session, regression } = report;
   const regressionSection =
     regression === null
@@ -100,7 +132,14 @@ export function reportToHtml(report: SanitizedReport): string {
             ? `Passed: no regressions across ${String(regression.comparedEndpointCount)} endpoints.`
             : `Failed: ${String(regression.findings.length)} regression finding(s).`
         }</p>
-${regression.passed ? '' : findingsTable(regression.findings.map((finding) => ({ ...finding, triage: 'open' })))}`;
+${
+  regression.passed
+    ? ''
+    : findingsTable(
+        regression.findings.map((finding) => ({ ...finding, triage: 'open' })),
+        options?.diagnostics,
+      )
+}`;
 
   const endpointRows = report.endpoints
     .map(
@@ -109,6 +148,11 @@ ${regression.passed ? '' : findingsTable(regression.findings.map((finding) => ({
 <td class="num">${optionalMs(stats.durationP50Ms)}</td><td class="num">${optionalMs(stats.durationP95Ms)}</td></tr>`,
     )
     .join('');
+
+  const carbonSection =
+    options?.carbonSummary === undefined
+      ? ''
+      : `<dt>Eco footprint</dt><dd>~${(options.carbonSummary.totalBytes / 1024).toFixed(1)} KB data (${options.carbonSummary.carbonGrams.toFixed(2)} gCO₂e)</dd>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -132,10 +176,11 @@ ${regression.passed ? '' : findingsTable(regression.findings.map((finding) => ({
 <dt>Requests</dt><dd>${String(session.requestCount)} recorded, ${String(session.droppedRequestCount)} dropped</dd>
 <dt>Rule set</dt><dd>${escapeHtml(report.ruleSetName)}</dd>
 <dt>Findings</dt><dd>${String(report.findings.length)}</dd>
+${carbonSection}
 </dl>
 ${regressionSection}
 <h2>Findings</h2>
-${findingsTable(report.findings)}
+${findingsTable(report.findings, options?.diagnostics)}
 <h2>Endpoints</h2>
 ${
   report.endpoints.length === 0

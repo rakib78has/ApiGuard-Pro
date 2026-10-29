@@ -1,5 +1,5 @@
 import type { CaptureSession, DetectionRuleSet, TriageStatus } from '@api-qa/contracts';
-import { analyzeRequests } from '@api-qa/core';
+import { analyzeRequests, calculateDataWaste } from '@api-qa/core';
 import { SessionRepository, SettingsRepository, type SessionSummary } from '@api-qa/storage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -84,6 +84,11 @@ export function Dashboard({ initialSessionId }: { readonly initialSessionId: str
     [session, ruleSet],
   );
 
+  const ecoWaste = useMemo(
+    () => (analysis === null ? null : calculateDataWaste(analysis)),
+    [analysis],
+  );
+
   const run = async (action: () => Promise<CaptureStatus>) => {
     setError(null);
     try {
@@ -120,7 +125,7 @@ export function Dashboard({ initialSessionId }: { readonly initialSessionId: str
   return (
     <div className="dashboard">
       <aside className="sidebar">
-        <h1>API QA Inspector</h1>
+        <h1>ApiGuard Pro</h1>
         <p className="muted">{summaries.length} saved session(s)</p>
         <ul aria-label="Sessions">
           {[...summaries].reverse().map((summary) => (
@@ -181,6 +186,12 @@ export function Dashboard({ initialSessionId }: { readonly initialSessionId: str
                   {session.requests.length} requests · {session.droppedRequestCount} dropped ·{' '}
                   {analysis?.findings.length ?? 0} findings · rules “{ruleSet?.name}”
                   {capturingThis ? ' · capturing (updates live)' : ''}
+                  {ecoWaste !== null && (
+                    <span>
+                      {' · '}🌱 <strong>{String(ecoWaste.estimatedWastedKb)} KB</strong> waste (
+                      {String(ecoWaste.estimatedCarbonGramsCO2)} gCO₂e)
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="row">

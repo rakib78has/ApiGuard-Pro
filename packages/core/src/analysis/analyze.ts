@@ -11,9 +11,13 @@ import { detectDuplicates } from '../detection/duplicates.js';
 import { evaluateEndpointRules } from '../detection/endpoint-rules.js';
 import { compareFindings } from '../detection/findings.js';
 import { detectRequestsAfterNavigation } from '../detection/navigation.js';
+import { detectPayloadBloom } from '../detection/payload.js';
 import { detectExcessivePolling } from '../detection/polling.js';
+import { detectRateLimits } from '../detection/rate-limit.js';
 import { compareRequests } from '../detection/requests.js';
 import { detectRetries } from '../detection/retries.js';
+import { detectSlowEndpoints } from '../detection/slow.js';
+import { detectWaterfallRequests } from '../detection/waterfall.js';
 import { compileEndpointRule, compilePollingPolicy } from '../rules/compiled.js';
 import { computeEndpointStats } from './stats.js';
 
@@ -80,6 +84,10 @@ export function analyzeRequests(
     strictEndpoints: ruleSet.strictEndpoints,
     droppedRequestCount: input.droppedRequestCount ?? 0,
   });
+  const slow = detectSlowEndpoints(analysed, ruleSet.slow);
+  const waterfall = detectWaterfallRequests(analysed, ruleSet.waterfall);
+  const payload = detectPayloadBloom(analysed, ruleSet.payload);
+  const rateLimit = detectRateLimits(analysed, ruleSet.rateLimit);
 
   return {
     ruleSetName: ruleSet.name,
@@ -89,6 +97,10 @@ export function analyzeRequests(
       ...polling.findings,
       ...afterNavigation,
       ...endpointFindings,
+      ...slow,
+      ...waterfall,
+      ...payload,
+      ...rateLimit,
     ].sort(compareFindings),
     endpointStats: computeEndpointStats(analysed),
     analysedRequestCount: analysed.length,

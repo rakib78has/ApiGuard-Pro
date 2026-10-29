@@ -46,3 +46,26 @@ export {
   type RequestPredicate,
 } from './rules/compiled.js';
 export { compileEndpointPattern, wildcardMatch, type PathMatcher } from './rules/pattern.js';
+export { toCurl, toFetch } from './curl.js';
+export {
+  exportToHar,
+  importFromHar,
+  type HarEntry,
+  type HarHeader,
+  type HarLog,
+  type HarQuery,
+} from './har.js';
+export { detectSlowEndpoints } from './detection/slow.js';
+export { detectWaterfallRequests } from './detection/waterfall.js';
+export { detectPayloadBloom } from './detection/payload.js';
+export { validateOpenApi, type OpenApiSpec } from './openapi.js';
+export { diagnoseFinding, type DiagnosticAdvice } from './ai-diagnostics.js';
+export { generateMswHandlers, generateNodeMockServer } from './mock.js';
+export { scanSecurityIssues } from './security-scan.js';
+export { calculateQueryDepth, inspectGraphQLRequests } from './graphql.js';
+export { calculateDataWaste, type WasteReport } from './carbon.js';
+export {
+  detectRateLimits,
+  inspectRateLimitHeaders,
+  type RateLimitHeaderAnalysis,
+} from './detection/rate-limit.js';

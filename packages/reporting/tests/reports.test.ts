@@ -185,6 +185,32 @@ describe('reportToHtml', () => {
     expect(html).toContain('<dt>requests</dt><dd>n/a</dd>');
     expect(html).toContain('<td class="num">—</td>');
   });
+
+  it('renders diagnostic advice and eco footprint when options are provided', () => {
+    const r = report({
+      analysis: analysis([finding({ id: 'f-1', type: 'duplicate-request' })]),
+    });
+    const html = reportToHtml(r, {
+      diagnostics: {
+        'f-1': {
+          rootCause: 'Double submit on button',
+          fix: 'Disable button while pending',
+          snippet: '<button disabled={submitting}>',
+        },
+      },
+      carbonSummary: {
+        totalBytes: 2048,
+        carbonGrams: 0.12,
+      },
+    });
+
+    expect(html).toContain('Eco footprint');
+    expect(html).toContain('2.0 KB data (0.12 gCO₂e)');
+    expect(html).toContain('Root cause &amp; fix recommendation');
+    expect(html).toContain('Double submit on button');
+    expect(html).toContain('Disable button while pending');
+    expect(html).toContain('&lt;button disabled={submitting}&gt;');
+  });
 });
 
 describe('helpers', () => {

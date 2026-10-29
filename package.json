@@ -42,7 +42,8 @@
     "release:check": "node scripts/check-release.ts",
     "package:extension": "pnpm build && pnpm validate:manifest && node scripts/package-extension.ts",
     "test:package": "pnpm package:extension && API_QA_PACKAGE_TEST=1 playwright test --grep @package",
-    "seed:check": "tsc -b tsconfig.build.json && node scripts/seed-check.ts"
+    "seed:check": "tsc -b tsconfig.build.json && node scripts/seed-check.ts",
+    "cli": "node scripts/cli.ts"
   },
   "devDependencies": {
     "@api-qa/contracts": "workspace:*",

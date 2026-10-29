@@ -6,5 +6,11 @@ export {
   type ReportableAnalysis,
 } from './build.js';
 export { csvCell, endpointsToCsv, findingsToCsv } from './csv.js';
-export { REPORT_CSP, escapeHtml, reportToHtml } from './html.js';
+export {
+  REPORT_CSP,
+  escapeHtml,
+  reportToHtml,
+  type HtmlDiagnosticItem,
+  type HtmlReportOptions,
+} from './html.js';
 export { reportToJson } from './json.js';

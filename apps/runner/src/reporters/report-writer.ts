@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { CaptureSession, RegressionResult, SanitizedReport } from '@api-qa/contracts';
-import type { AnalysisResult } from '@api-qa/core';
+import { calculateDataWaste, diagnoseFinding, type AnalysisResult } from '@api-qa/core';
 import {
   buildReport,
   endpointsToCsv,
@@ -48,8 +48,28 @@ export function writeReports(input: WriteReportInput): ReportFiles {
     findingsCsv: join(input.directory, 'api-qa-findings.csv'),
     endpointsCsv: join(input.directory, 'api-qa-endpoints.csv'),
   };
+  const diagnostics: Record<string, { rootCause: string; fix: string; snippet?: string }> = {};
+  for (const finding of input.analysis.findings) {
+    const advice = diagnoseFinding(finding);
+    diagnostics[finding.id] = {
+      rootCause: advice.probableRootCause,
+      fix: advice.suggestedFixTitle,
+      snippet: advice.codeSnippet,
+    };
+  }
+  const waste = calculateDataWaste(input.analysis);
+
   writeFileSync(files.json, reportToJson(report));
-  writeFileSync(files.html, reportToHtml(report));
+  writeFileSync(
+    files.html,
+    reportToHtml(report, {
+      diagnostics,
+      carbonSummary: {
+        totalBytes: waste.estimatedWastedBytes,
+        carbonGrams: waste.estimatedCarbonGramsCO2,
+      },
+    }),
+  );
   writeFileSync(files.findingsCsv, findingsToCsv(report));
   writeFileSync(files.endpointsCsv, endpointsToCsv(report));
   return { report, ...files };

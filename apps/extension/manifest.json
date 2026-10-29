@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "API QA Inspector",
+  "name": "ApiGuard Pro",
   "version": "0.0.0",
-  "description": "Find duplicate, unexpected and excessive API calls on any web page. All data stays on your device.",
+  "description": "Enforce API contracts, budgets, and security standards. Detect duplicate, slow, and excessive API calls on any web page.",
   "minimum_chrome_version": "116",
   "action": {
-    "default_title": "API QA Inspector",
+    "default_title": "ApiGuard Pro",
     "default_popup": "popup/index.html",
     "default_icon": {
       "16": "icons/icon-16.png",

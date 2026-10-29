@@ -46,7 +46,7 @@ test.describe('packaged extension @package', () => {
       const extensionId = new URL(worker.url()).host;
       const popup = await context.newPage();
       await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
-      await expect(popup.getByRole('heading', { name: 'API QA Inspector' })).toBeVisible();
+      await expect(popup.getByRole('heading', { name: 'ApiGuard Pro' })).toBeVisible();
       const icon = await popup.goto(`chrome-extension://${extensionId}/icons/icon-128.png`);
       expect(icon?.status()).toBe(200);
 

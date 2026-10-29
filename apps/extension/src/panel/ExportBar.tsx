@@ -1,5 +1,11 @@
 import type { CaptureSession } from '@api-qa/contracts';
-import type { AnalysisResult } from '@api-qa/core';
+import {
+  calculateDataWaste,
+  diagnoseFinding,
+  exportToHar,
+  generateMswHandlers,
+  type AnalysisResult,
+} from '@api-qa/core';
 import {
   buildReport,
   endpointsToCsv,
@@ -21,7 +27,7 @@ function download(fileName: string, type: string, text: string): void {
   }, 10_000);
 }
 
-/** Exports the sanitised report; the request list itself is never exported. */
+/** Exports the sanitised report, HAR, or MSW mock handlers. */
 export function ExportBar({
   session,
   analysis,
@@ -31,7 +37,21 @@ export function ExportBar({
 }) {
   const [error, setError] = useState<string | null>(null);
 
-  const exportAs = (format: 'json' | 'csv' | 'endpoints-csv' | 'html') => {
+  const exportAs = (format: 'json' | 'csv' | 'endpoints-csv' | 'html' | 'har' | 'msw') => {
+    const safeBaseName = session.name.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+
+    if (format === 'har') {
+      const har = exportToHar(session.requests);
+      download(`${safeBaseName}.har`, 'application/json', JSON.stringify(har, null, 2));
+      return;
+    }
+
+    if (format === 'msw') {
+      const msw = generateMswHandlers(session.requests);
+      download(`${safeBaseName}.msw.ts`, 'text/plain', msw);
+      return;
+    }
+
     const result = buildReport({
       session,
       analysis,
@@ -58,9 +78,31 @@ export function ExportBar({
           endpointsToCsv(report),
         );
         break;
-      case 'html':
-        download(reportFileName(report, 'html'), 'text/html', reportToHtml(report));
+      case 'html': {
+        const diagnostics: Record<string, { rootCause: string; fix: string; snippet?: string }> =
+          {};
+        for (const finding of analysis.findings) {
+          const advice = diagnoseFinding(finding);
+          diagnostics[finding.id] = {
+            rootCause: advice.probableRootCause,
+            fix: advice.suggestedFixTitle,
+            snippet: advice.codeSnippet,
+          };
+        }
+        const waste = calculateDataWaste(analysis);
+        download(
+          reportFileName(report, 'html'),
+          'text/html',
+          reportToHtml(report, {
+            diagnostics,
+            carbonSummary: {
+              totalBytes: waste.estimatedWastedBytes,
+              carbonGrams: waste.estimatedCarbonGramsCO2,
+            },
+          }),
+        );
         break;
+      }
     }
   };
 
@@ -98,6 +140,22 @@ export function ExportBar({
         }}
       >
         Endpoints CSV
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          exportAs('har');
+        }}
+      >
+        HAR
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          exportAs('msw');
+        }}
+      >
+        MSW Mocks
       </button>
       {error !== null && <span className="error-text">{error}</span>}
     </div>

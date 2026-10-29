@@ -6,6 +6,7 @@ import {
   type Finding,
   type TriageStatus,
 } from '@api-qa/contracts';
+import { diagnoseFinding, toCurl } from '@api-qa/core';
 import { useMemo, useState } from 'react';
 
 import {
@@ -44,6 +45,9 @@ function FindingCard({
   readonly onTriage: FindingsViewProps['onTriage'];
 }) {
   const { evidence } = finding;
+  const advice = useMemo(() => diagnoseFinding(finding), [finding]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
   return (
     <article className="card stack" aria-label={finding.title}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -57,6 +61,31 @@ function FindingCard({
       </div>
       {finding.endpoint !== null && <p className="mono">{finding.endpoint}</p>}
       <p>{finding.reasoning}</p>
+      <details>
+        <summary>🤖 AI Diagnosis &amp; Fix Recommendation</summary>
+        <div style={{ padding: '8px 0', fontSize: '13px' }}>
+          <p>
+            <strong>Root cause:</strong> {advice.probableRootCause}
+          </p>
+          <p>
+            <strong>Suggested fix:</strong> {advice.suggestedFixTitle}
+          </p>
+          {advice.codeSnippet.length > 0 && (
+            <pre
+              className="mono"
+              style={{
+                padding: '8px',
+                background: 'var(--panel, #f5f6f8)',
+                borderRadius: '4px',
+                overflowX: 'auto',
+                fontSize: '12px',
+              }}
+            >
+              <code>{advice.codeSnippet}</code>
+            </pre>
+          )}
+        </div>
+      </details>
       <details>
         <summary>
           Evidence: {evidence.requestCount} request(s)
@@ -83,6 +112,22 @@ function FindingCard({
                     : `${new Date(request.timestamp).toLocaleTimeString()} ${request.method} ${request.url} → ${
                         request.error ?? (request.status === null ? '?' : String(request.status))
                       }`}
+                  {request !== undefined && (
+                    <button
+                      type="button"
+                      style={{ marginLeft: '8px', fontSize: '11px', padding: '1px 6px' }}
+                      onClick={() => {
+                        const curl = toCurl(request);
+                        void navigator.clipboard.writeText(curl);
+                        setCopiedId(id);
+                        setTimeout(() => {
+                          setCopiedId(null);
+                        }, 2000);
+                      }}
+                    >
+                      {copiedId === id ? '✓ Copied' : 'Copy cURL'}
+                    </button>
+                  )}
                 </li>
               );
             })}

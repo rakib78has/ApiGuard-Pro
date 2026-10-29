@@ -55,7 +55,7 @@ test.describe('extension smoke @smoke', () => {
     expect(extensionId).toMatch(/^[a-p]{32}$/);
     const popup = await extensionContext.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup/index.html`);
-    await expect(popup.getByRole('heading', { name: 'API QA Inspector' })).toBeVisible();
+    await expect(popup.getByRole('heading', { name: 'ApiGuard Pro' })).toBeVisible();
     // The popup's own tab is not an http(s) page.
     await expect(popup.getByText('Open an http or https page')).toBeVisible();
     await popup.close();

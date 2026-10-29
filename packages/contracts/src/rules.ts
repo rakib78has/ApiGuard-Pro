@@ -138,6 +138,38 @@ export const detectionRuleSetSchema = z
         routeChanges: z.boolean().default(false),
       })
       .prefault({}),
+    slow: z
+      .strictObject({
+        enabled: z.boolean().default(false),
+        /** Requests taking longer than this (ms) are reported as slow. */
+        thresholdMs: z.number().int().min(1).max(600_000).default(2_000),
+      })
+      .prefault({}),
+    waterfall: z
+      .strictObject({
+        enabled: z.boolean().default(false),
+        /** Number of consecutive serial calls on the same origin needed to report a waterfall. */
+        minChainLength: z.number().int().min(2).max(20).default(3),
+        /** Maximum delay (ms) between the end of request N and start of N+1 to still be linked. */
+        gapToleranceMs: z.number().int().min(0).max(5_000).default(50),
+      })
+      .prefault({}),
+    payload: z
+      .strictObject({
+        enabled: z.boolean().default(false),
+        /** Maximum request payload size in bytes before reporting payload-bloom. */
+        maxSizeBytes: z.number().int().min(1_024).max(50_000_000).default(1_048_576),
+      })
+      .prefault({}),
+    rateLimit: z
+      .strictObject({
+        enabled: z.boolean().default(false),
+        /** Max calls permitted to an endpoint within the sliding window before warning. */
+        maxRequestsPerWindow: z.number().int().min(1).max(10_000).default(60),
+        /** Sliding window duration in milliseconds. */
+        windowMs: z.number().int().min(100).max(3_600_000).default(60_000),
+      })
+      .prefault({}),
     polling: z.array(pollingPolicySchema).max(LIMITS.rulesPerSet).default([]),
     endpoints: z.array(endpointRuleSchema).max(LIMITS.rulesPerSet).default([]),
     /** Report API requests that match no endpoint rule or polling policy. */

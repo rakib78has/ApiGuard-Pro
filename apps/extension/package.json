@@ -2,7 +2,7 @@
   "name": "@api-qa/extension",
   "version": "0.1.2",
   "private": true,
-  "description": "API QA Inspector Chrome extension (Manifest V3).",
+  "description": "ApiGuard Pro Chrome extension (Manifest V3). Enforce API contracts, budgets, and security standards.",
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {

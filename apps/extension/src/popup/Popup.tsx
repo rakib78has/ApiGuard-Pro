@@ -104,7 +104,7 @@ export function Popup() {
   return (
     <main className="popup stack">
       <header className="row" style={{ justifyContent: 'space-between' }}>
-        <h1>API QA Inspector</h1>
+        <h1>ApiGuard Pro</h1>
         <button
           type="button"
           onClick={() => {
