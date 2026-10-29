@@ -8,6 +8,13 @@ From 0.1.0 on, this file is maintained by
 [Conventional Commit](https://www.conventionalcommits.org/) pull-request titles, so don't edit
 upcoming entries by hand. Change the PR title instead (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
+## [0.2.0](https://github.com/rakib78has/ApiGuard-Pro/compare/v0.1.2...v0.2.0) (2026-10-29)
+
+
+### Features
+
+* add ApiGuard Pro branding, advanced detectors, AI diagnostics, and CLI runner ([b7d615c](https://github.com/rakib78has/ApiGuard-Pro/commit/b7d615ca26186bef27beed8650bfbce70f7b1d7b))
+
 ## [0.1.2](https://github.com/rakib78has/Api-Radar/compare/v0.1.1...v0.1.2) (2026-10-16)
 
 
